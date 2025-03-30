@@ -6,6 +6,13 @@
 
 Project predicting injury rates in runners based on information about training volume
 
+
+## Project scope
+
+## References
+Paper that makes original predictions on the dataset
+https://pure.rug.nl/ws/portalfiles/portal/183763727/_15550273_International_Journal_of_Sports_Physiology_and_Performance_Injury_Prediction_in_Competitive_Runners_With_Machine_Learning.pdf
+
 ## Project Organization
 
 ```
@@ -58,4 +65,3 @@ Project predicting injury rates in runners based on information about training v
 ```
 
 --------
-
