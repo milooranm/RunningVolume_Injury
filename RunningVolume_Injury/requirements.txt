@@ -9,4 +9,8 @@ python-dotenv
 tqdm
 typer
 xgboost
+hyperopt
+bayesian_optimization==1.4.0
+colorama==0.4.4
+
 -e .
