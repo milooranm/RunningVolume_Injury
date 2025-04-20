@@ -42,8 +42,8 @@ api = None
 
 # Let's say we want to scrape all activities using switch menu_option "p". We change the values of the below variables, IE startdate days, limit,...
 # today = datetime.date.today()
-today = datetime.datetime.strptime('2024-09-30', '%Y-%m-%d').date()
-startdate = today - datetime.timedelta(days=60)  # Select past week
+today = datetime.datetime.strptime('2024-09-15', '%Y-%m-%d').date()
+startdate = today - datetime.timedelta(days=90)  # Select past week
 start = 0
 limit = 100
 start_badge = 1  # Badge related calls calls start counting at 1
