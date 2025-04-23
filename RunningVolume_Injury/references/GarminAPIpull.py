@@ -54,12 +54,9 @@ activityfile = "MY_ACTIVITY.fit"  # Supported file types are: .fit .gpx .tcx
 
 menu_options = {
     "n": f"Get activities data from start '{start}' and limit '{limit}'",
-    "o": "Get last activity",
     "p": f"Download activities data by date from '{startdate.isoformat()}' to '{today.isoformat()}'",
-    "r": f"Get all kinds of activities data from '{start}'",
-    "I": f"Get activities for date '{today.isoformat()}'",
     "Z": "Remove stored login tokens (logout)",
-    "q": "Exit",
+
 }
 
 def display_json(api_call, output):
@@ -201,9 +198,7 @@ def switch(api, i):
                     f"api.get_activities({start}, {limit})",
                     api.get_activities(start, limit),
                 )  # 0=start, 1=limit
-            elif i == "o":
-                # Get last activity
-                display_json("api.get_last_activity()", api.get_last_activity())
+            
             elif i == "p":
                 # Get activities data from startdate 'YYYY-MM-DD' to enddate 'YYYY-MM-DD', with (optional) activitytype
                 # Possible values are: cycling, running, swimming, multi_sport, fitness_equipment, hiking, walking, other
