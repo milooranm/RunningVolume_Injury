@@ -56,6 +56,7 @@ menu_options = {
     "n": f"Get activities data from start '{start}' and limit '{limit}'",
     "p": f"Download activities data by date from '{startdate.isoformat()}' to '{today.isoformat()}'",
     "Z": "Remove stored login tokens (logout)",
+    "q": "Quit",
 
 }
 
