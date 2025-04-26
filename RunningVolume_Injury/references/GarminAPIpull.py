@@ -43,9 +43,9 @@ api = None
 # Let's say we want to scrape all activities using switch menu_option "p". We change the values of the below variables, IE startdate days, limit,...
 # today = datetime.date.today()
 today = datetime.datetime.strptime('2024-09-15', '%Y-%m-%d').date()
-startdate = today - datetime.timedelta(days=90)  # Select past week
+startdate = today - datetime.timedelta(days=200)  # 
 start = 0
-limit = 100
+#limit = 100
 start_badge = 1  # Badge related calls calls start counting at 1
 activitytype = ""  # Possible values are: cycling, running, swimming, multi_sport, fitness_equipment, hiking, walking, other
 activityfile = "MY_ACTIVITY.fit"  # Supported file types are: .fit .gpx .tcx
