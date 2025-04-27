@@ -34,7 +34,7 @@ tokenstore_base64 = os.getenv("GARMINTOKENS_BASE64") or "~/.garminconnect_base64
 # Let's say we want to scrape all activities using switch menu_option "p". We change the values of the below variables, IE startdate days, limit,...
 # today = datetime.date.today()
 today = datetime.datetime.strptime('2024-09-15', '%Y-%m-%d').date()
-startdate = today - datetime.timedelta(days=200)  # 
+startdate = today - datetime.timedelta(days=20)  # 
 start = 0
 #limit = 100
 activitytype = ""
@@ -68,8 +68,9 @@ def init_api(email, password):
                 email, password = get_credentials()
 
             garmin = Garmin(
-                email=email, password=password, is_cn=False, return_on_mfa=True
+                email=email, password=password, is_cn=False
             )
+            print(garmin.login())mill
             result1, result2 = garmin.login()
             if result1 == "needs_mfa":  # MFA is required
                 mfa_code = get_mfa()
@@ -141,6 +142,8 @@ def get_activity_files(api):
         logger.error(err)
         print("Error downloading activities. Exiting.")
 
+def remove_tokens(tokenstore = "~/.garminconnect"):
+    """Remove stored login tokens."""
     # Remove stored login tokens for Garmin Connect portal
     tokendir = os.path.expanduser(tokenstore)
     print(f"Removing stored login tokens from: {tokendir}")
@@ -162,8 +165,30 @@ def main():
     
     # gloabal api
 
-    api = init_api(email, password)     
+    api = init_api(email, password) 
+    print("Login successful, getting activities...")    
     get_activity_files(api)
-    
+
+def main(email=None, password=None, start_date=None, end_date=None, activitytype="", tokenstore="~/.garminconnect", output_dir="./"):
+    """Main function to download Garmin Connect activities."""
+    print("Garmin Connect API - Activity Downloader")
+
+    if not email or not password:
+        email, password = get_credentials()
+
+    api = init_api(email, password)
+
+    if not api:
+        print("Failed to initialize Garmin API. Exiting.")
+        return
+
+    if not start_date:
+        start_date = datetime.datetime.strptime('2024-01-01', '%Y-%m-%d')
+    if not end_date:
+        end_date = datetime.datetime.now()
+
+    get_activity_files(api, start_date, end_date, activitytype, output_dir)
+    remove_tokens(tokenstore) #removes tokens after every pull
+
 
 main()
