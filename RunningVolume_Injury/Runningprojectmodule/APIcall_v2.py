@@ -145,7 +145,12 @@ def main_api_call(email=None, password=None, start_date=None, end_date=None):
             except ValueError:
                 print("Invalid date format. Please use YYYY-MM-DD.")
     else:
-        end_date = datetime.datetime.now()
+        end_date = datetime.date.now()
+
+
+        # change the days here!
+
+        
         start_date = end_date - datetime.timedelta(days=50)
 
     if not email or not password:
