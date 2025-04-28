@@ -150,8 +150,10 @@ def main_api_call(email=None, password=None, start_date=None, end_date=None):
 
         # change the days here!
 
-        
+
         start_date = end_date - datetime.timedelta(days=50)
+    print("start date: ", start_date,'start_date type: ', type(start_date))
+    print("end date: ", end_date,'end_date type: ', type(end_date))
 
     if not email or not password:
         email, password = get_credentials()
