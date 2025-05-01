@@ -1,21 +1,34 @@
+
+<img src="./references/injured_running.jpg" width="700">
+
+
 # RunningVolume_Injury
 
 <a target="_blank" href="https://cookiecutter-data-science.drivendata.org/">
     <img src="https://img.shields.io/badge/CCDS-Project%20template-328F97?logo=cookiecutter" />
 </a>
 
-Project predicting injury rates in runners based on information about training volume
+Predicting individualised injury risk trends in runners based on user activity data
 
 
 ## Project scope
 
-When people get into running at various levels, they will typically encounter several pieces of advice for staying injury free, the main one being load management. One of the golden rules for load management is to ‘increase volume by 10% each week to avoid injury’ this is generally taken as gospel. 
+When people get into running at various levels, they will typically encounter several pieces of advice for staying injury free, the main one being load management -load being the total strain put on the body, usually measured as a combination of how far you run X how fast you run. One of the golden rules for load management is to ‘increase volume(total distance covered) by 10% each week to avoid injury’ and this is generally taken as gospel, and you'll see it repeated in lots of different places. 
 Currently recovering from my own injury, my perspective as a data scientist has led me to ask ‘what do the data say?’ What is the baseline injury rate for runners maintaining volume/intensity, and what is the relative injury rate for various increases in volume? Some research has been done on this but it is far from conclusive. I hope to help users understand if their recent training puts them at a higher risk of injury.
 
-Using machine learning, and a dataset detailing training and injuries for a group of competitive medium to long distance runners, I’ll attempt to create a model that predicts relative risk of injury over time for various training details like volume and intensity. Then, I will extract user training data recorded with wearables via API, and show a user their relative risk of injury over time based on predictions made by the model.
+Using machine learning, and a dataset detailing training and injuries for a group of competitive medium to long distance runners, I have created a model that predicts relative risk of injury over time based on various training details like overall distance, and distance in different heart rate zones(higher zone => faster running). 
+To make these predicitions available for users, I have created a pipeline so that users can login with their Garmin connect details and their activity data will be extracted, transformed, and loaded into the model so that it can make predictions about their injury risk and generate visualisations of their risk trends.
 
+## 🧭 Project Workflow
+
+![Workflow Diagram](./references/workflow.svg)
+
+## Project Demonstration
+
+A video of me giving a demo of the project  and discussing some of the results can be found here: https://www.loom.com/share/a783d406943e4f20a68f1a5d8d3b8eca?sid=c80f4b59-c03a-420e-bf74-750eee413210
 
 ## References
+
 Paper that makes original predictions on the dataset
 https://pure.rug.nl/ws/portalfiles/portal/183763727/_15550273_International_Journal_of_Sports_Physiology_and_Performance_Injury_Prediction_in_Competitive_Runners_With_Machine_Learning.pdf
 
