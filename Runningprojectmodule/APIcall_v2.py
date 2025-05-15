@@ -46,7 +46,6 @@ def init_api(email, password): #remove tokenstore
         garmin = Garmin(email, password)
         garmin.login()
         print("Login successful!")
-        # Proceed with your data retrieval and processing here
     except Exception as e:
         print(f"An error occurred during login: {e}")
     return garmin
@@ -135,7 +134,7 @@ def main_api_call(email=None, password=None, start_date=None, end_date=None):
     """Main function to download Garmin Connect activities."""
     print("Garmin Connect API - Activity Downloader")
 
-    custom_start = input("Do you want to enter a custom start date? Default start date is 200 days before today (y/n): ").lower()
+    custom_start = input("Do you want to enter a custom start date? Default start date is 100 days before today (y/n): ").lower()
     if custom_start == 'y':
         while True:
             start_date_str = input("Enter start date (YYYY-MM-DD): ")
@@ -148,7 +147,7 @@ def main_api_call(email=None, password=None, start_date=None, end_date=None):
        
         
         end_date = datetime.date.today()
-        start_date = end_date - datetime.timedelta(days=200)
+        start_date = end_date - datetime.timedelta(days=100)
 
 
     if not email or not password:

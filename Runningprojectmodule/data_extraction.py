@@ -20,9 +20,12 @@ def create_emptydf(start_date,end_date):
     end_date = str(end_date)
     print("start date: ", start_date,'start_date type: ', type(start_date))
     print("end date: ", end_date,'end_date type: ', type(end_date))
-    start = datetime.strptime(start_date, '%Y-%m-%d')
-    # write the above but it strips 
-    end = datetime.strptime(end_date, '%Y-%m-%d')
+    try:
+        start = datetime.strptime(start_date, '%Y-%m-%d %H:%M:%S').strftime('%Y-%m-%d')
+        end = datetime.strptime(end_date, '%Y-%m-%d %H:%M:%S.%f').strftime('%Y-%m-%d')
+    except ValueError:
+        start = datetime.strptime(start_date, '%Y-%m-%d').strftime('%Y-%m-%d')
+        end = datetime.strptime(end_date, '%Y-%m-%d').strftime('%Y-%m-%d')
     date_range = pd.date_range(start, end)
 
     df = pd.DataFrame({'Date': date_range})
