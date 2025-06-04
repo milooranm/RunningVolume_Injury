@@ -1,7 +1,14 @@
 import pandas as pd
 import numpy as np
 import pickle
+
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+import matplotlib.colors as mcolors
+import matplotlib.dates as mdates
+
 from APIcall_v2 import main_api_call
+
 from data_extraction import main_extract_transform_memory
 
 # call the two preprocessing functions
@@ -41,17 +48,8 @@ df['injury predictions'] = predictions
 df['injury probabilities'] = probs
 df[['Date','injury predictions','injury probabilities']].head(30)
 
-# plot the probabilities over time
-import matplotlib.pyplot as plt
-# add a colour gradient to the plot based on the injury probabilities -red is high, blue is low
-
-import matplotlib.cm as cm
-import matplotlib.colors as mcolors
-import matplotlib.dates as mdates
-
-# add a colour gradient to the background based on the x axis -red is high, blue is low, with adjustable transparency
-cmap = cm.get_cmap('coolwarm')
-norm = mcolors.Normalize(vmin=0, vmax=1)
+# Save the predictions to a CSV file
+df.to_csv('user activity_data_with_predictions.csv', index=False)
 
 
 
