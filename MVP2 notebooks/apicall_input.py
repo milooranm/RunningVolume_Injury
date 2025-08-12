@@ -89,7 +89,7 @@ def get_activity_dataframes(api, start_date, end_date):
             csv_data = api.download_activity(
                 activity_id, dl_fmt=api.ActivityDownloadFormat.CSV
             )
-            filename = f"{activity_type}_{activity_start_time}_{activity_id}.csv"
+            filename = f"{activity_type}|{activity_start_time}|{activity_id}.csv"
             # Read CSV data into DataFrame
             df = pd.read_csv(BytesIO(csv_data))
             # Append to the list
