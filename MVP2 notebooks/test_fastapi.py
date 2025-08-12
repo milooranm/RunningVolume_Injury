@@ -61,7 +61,6 @@ async def predict_and_visualize(username:str = Form(...), password:str = Form(..
     perform spoof calculation and return an image
     """
     try:
-        
         # output the number squared
         if username and password:
         # handle the image
