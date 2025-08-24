@@ -21,7 +21,7 @@ def load_image(username: str, password: str):
         buffer.seek(0)
         return buffer
     else:
-        reutrn None
+        return None
 
 
 app = FastAPI(
