@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Response
+from fastapi import FastAPI, Form, Response
 from fastapi.responses import HTMLResponse, StreamingResponse
 import pickle
 import matplotlib.pyplot as plt
@@ -52,7 +52,7 @@ def runitall(email: str, password: str):
     df['injury probabilities'] = model.predict_proba(norm_df)[:, 1]
     # plot the probabilities over time with a rolling mean
     plt.figure(figsize=(10,5))
-    plt.plot(df['Date'],df['injury probabilities'])# (remove bracket add following ) .rolling(window=5).mean())
+    plt.plot(df['Date'],df['injury probabilities'].rolling(window=3).mean())
     plt.xticks(df['Date'][::5], rotation=45, ha='right')
     # Save to buffer
     buffer_img = io.BytesIO()
@@ -82,7 +82,7 @@ async def login_form():
                 <input type="password" name="password" required><br/>
                 <button type="submit">Generate Prediction</button>
             </form>
-            <p id="loading-message" style="display:none;">Processing... Please wait.</p>
+            <p id="loading-message" style="display:none;">Processing... Should take about 2 minutes, Please wait.</p>
             <script>
                 function showLoading() {
                     document.getElementById('loading-message').style.display = 'block';
