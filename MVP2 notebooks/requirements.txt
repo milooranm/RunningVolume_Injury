@@ -79,7 +79,6 @@ regex==2025.7.34
 requests==2.32.4
 requests-oauthlib==2.0.0
 rich==14.1.0
--e git+https://github.com/milooranm/RunningVolume_Injury.git@9a348acf5557587e85ce7909db1e687c3ac66fdf#egg=Runningprojectmodule
 scikit-learn==1.7.1
 scipy==1.16.1
 seaborn==0.13.2
