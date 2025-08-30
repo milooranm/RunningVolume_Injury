@@ -3,12 +3,33 @@ from fastapi.responses import HTMLResponse, StreamingResponse
 import pickle
 import matplotlib.pyplot as plt
 import io
-import os
+import logging
+import time
 from PIL import Image
 from io import BytesIO
 
 from apicall_input import main_api_call 
 from data_extraction_v2 import main_extract_transform
+
+logger = logging.getLogger(__name__)
+
+logger.setLevel(logging.DEBUG)
+
+# Create and configure handlers
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.INFO) # Only show INFO, WARNING, ERROR, and CRITICAL messages in the console
+
+file_handler = logging.FileHandler("app_errors.log")
+file_handler.setLevel(logging.ERROR) # Only write ERROR and CRITICAL messages to the file
+
+formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(name)s - %(message)s")
+formatter.converter = time.gmtime
+# Set the formatter for both handlers
+console_handler.setFormatter(formatter)
+file_handler.setFormatter(formatter)
+# Add handlers to the logger
+logger.addHandler(console_handler)
+logger.addHandler(file_handler)
 
 def normalize_user(row, mean_df, std_df):
     z = (row - mean_df) / std_df
@@ -41,15 +62,45 @@ def runitall(email: str, password: str):
         return: buffer_img : image buffer with the plot
     """
     # import model
-    with open('..\models\mvp2best_logistic_model.pkl', 'rb') as file:
-        model = pickle.load(file)   
-    #pipeline steps    
-    start_date, end_date, df_memory = main_api_call(email, password)
-    df = main_extract_transform(start_date, end_date, df_memory)
+    try: 
+
+        with open('..\models/mvp2best_logistic_model.pkl', 'rb') as file:
+            model = pickle.load(file)
+    except FileNotFoundError:
+        logger.error("Model file not found. Please ensure 'mvp2best_logistic_model.pkl' is in the 'models' directory.")
+        raise
+    except Exception as e:
+        logger.error(f"An error occurred while loading the model: {e}")
+        raise
+    logger.info("Model loaded successfully.")
+
+    #pipeline steps
+    try:    
+        start_date, end_date, df_memory = main_api_call(email, password)
+    except Exception as e:
+        logger.error(f"An error occurred during the API call: {e}")
+        raise
+    logger.info("API call completed successfully.")
+    try: 
+        df = main_extract_transform(start_date, end_date, df_memory)
+    except Exception as e:
+        logger.error(f"An error occurred during data extraction and transformation: {e}")
+        raise
+    logger.info("Data extraction and transformation completed successfully.")
     # add the normalisation step
-    norm_df= norm_user_data(df)
+    try:
+        norm_df= norm_user_data(df)
+    except Exception as e:
+        logger.error(f"An error occurred during data normalization: {e}")
+        raise
+    logger.info("Data normalization completed successfully.")
     # make predictions
-    df['injury probabilities'] = model.predict_proba(norm_df)[:, 1]
+    try:
+        df['injury probabilities'] = model.predict_proba(norm_df)[:, 1]
+    except Exception as e:
+        logger.error(f"An error occurred while making predictions on converted data: {e}")
+        raise
+    logger.info("Predictions made successfully.")
     # plot the probabilities over time with a rolling mean
     plt.figure(figsize=(10,5))
     plt.plot(df['Date'],df['injury probabilities'].rolling(window=3).mean())
@@ -98,11 +149,15 @@ async def predict_and_visualize(email: str = Form(...), password: str = Form(...
     """
     perform spoof calculation and return an image
     """
+    logger.info("Received request for injury risk prediction.")
     try:
         # run the full pipeline to get the image
         img =  runitall(email, password)
-           
+        
         return StreamingResponse(img, media_type="image/png")
+        
+
     
     except Exception as e:
-        return {"error": str(e)}, 500
+        logger.error(f"An error occurred in the prediction and visualization endpoint: {e}")
+        return {"something didn't go quite right with this. Try again to be sure but if no joy send me a quick email at milomoran123@gmail.com and I'll try to figure out what happened": str(e)}, 500
