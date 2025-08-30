@@ -7,7 +7,7 @@ name = "Runningprojectmodule"
 version = "0.0.1"
 description = "Project predicting injury rates in runners based on information about training volume"
 authors = [
-  { name = "Milo" },
+  { name = "Milo" }
 ]
 license = { file = "LICENSE" }
 readme = "README.md"
