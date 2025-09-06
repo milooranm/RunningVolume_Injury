@@ -103,8 +103,9 @@ def runitall(email: str, password: str):
     logger.info("Predictions made successfully.")
     # plot the probabilities over time with a rolling mean
     plt.figure(figsize=(10,5))
-    plt.plot(df['Date'],df['injury probabilities'].rolling(window=3).mean())
+    plt.plot(df['Date'],df['injury probabilities']#.rolling(window=3).mean())
     plt.xticks(df['Date'][::5], rotation=45, ha='right')
+    plt.ylim(0, 1)
     # Save to buffer
     buffer_img = io.BytesIO()
     plt.savefig(buffer_img, format="png")
@@ -125,7 +126,7 @@ async def login_form():
     <html>
         <head><title>Injury Risk Prediction</title></head>
         <body>
-            <h2>Login to Generate Injury Risk Prediction</h2>
+            <h2>Login with Your Garmin Credentials to Generate Injury Risk Prediction</h2>
             <form action="/predict_and_visualize/" method="post" onsubmit="showLoading()">
                 <label>Email:</label>
                 <input type="text" name="email" required><br/>
