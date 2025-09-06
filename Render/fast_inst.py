@@ -54,7 +54,7 @@ def norm_user_data(df):
     user_normalized = user_normalized.drop(columns=[ 'Date'], errors='ignore')
     return user_normalized
 
-def runitall(email: str, password: str):
+def runitall(email: str, password: str, zone3: int , zone5: int ):
     """ 
     run all functions to get the image
             email: str : user email for api call
@@ -82,7 +82,7 @@ def runitall(email: str, password: str):
         raise
     logger.info("API call completed successfully.")
     try: 
-        df = main_extract_transform(start_date, end_date, df_memory)
+        df = main_extract_transform(start_date, end_date, df_memory, zone3, zone5)
     except Exception as e:
         logger.error(f"An error occurred during data extraction and transformation: {e}")
         raise
@@ -103,6 +103,15 @@ def runitall(email: str, password: str):
     logger.info("Predictions made successfully.")
     # plot the probabilities over time with a rolling mean
     plt.figure(figsize=(10,5))
+    plt.title('Injury Risk score over time')
+    plt.xlabel('Date')
+    plt.ylabel('Injury Risk Score (0-1)')
+    # add faint horizontal lines at 0.2, 0.4, 0.6, 0.8
+    plt.axhline(y=0.2, color='r', linestyle='--', alpha=0.3)
+    plt.axhline(y=0.4, color='r', linestyle='--', alpha=0.3)
+    plt.axhline(y=0.6, color='r', linestyle='--', alpha=0.3)
+    plt.axhline(y=0.8, color='r', linestyle='--', alpha=0.3)    
+
     plt.plot(df['Date'],df['injury probabilities'])#.rolling(window=3).mean())
     plt.xticks(df['Date'][::5], rotation=45, ha='right')
     plt.ylim(0, 1)
@@ -127,14 +136,54 @@ async def login_form():
         <head><title>Injury Risk Prediction</title></head>
         <body>
             <h2>Login with Your Garmin Credentials to Generate Injury Risk Prediction</h2>
+            <p style="max-width:600px; font-size:14px; color:#333;">
+                This tool connects to your Garmin data and uses your training history combined with a machine learning model 
+                to produce a visualisation of your short-term injury risk trends. 
+                Your credentials are only used in memory during processing and are not stored.
+            </p>
             <form action="/predict_and_visualize/" method="post" onsubmit="showLoading()">
-                <label>Email:</label>
+                <label> User Email:</label>
                 <input type="text" name="email" required><br/>
-                <label>Password:</label>
+                <label>GarminConnect Password:</label>
                 <input type="password" name="password" required><br/>
+                <label>Zone 3 Threshold Heart Rate:</label>
+                <input type="range" name="zone3" min="100" max="200" value="150" 
+                       oninput="document.getElementById('z3val').innerText = this.value">
+                <span id="z3val">150</span><br/><br/>
+
+                <label>Zone 5 Threshold Heart Rate:</label>
+                <input type="range" name="zone5" min="100" max="200" value="180" 
+                       oninput="document.getElementById('z5val').innerText = this.value">
+                <span id="z5val">180</span><br/><br/>
                 <button type="submit">Generate Prediction</button>
             </form>
+            <p style="max-width:600px; font-size:14px; color:#333;">
+                So the goal of this tool is to improve on the common reccomendations of 
+                "10percent increase in training load per week"
+                as a primary load management tool.<br/>
+                The model does this by taking into account both your recent acute training history in 
+                the most recent week as well as your 'form' for the past three weeks. <br/>
+                The model looks at not only your total training volume but also the intensity 
+                of that training, with heart rate zones as a proxy for intensity.<br/>
+                The model is trained on a large dataset of running training logs and injury records, 
+                and is able to identify patterns that are associated with increased injury risk. <br/>
+                The output is a risk score between 0 and 1, with higher scores indicating a higher risk. <br/>
+                Calibrating the model is particularly difficult, as I can't exactly tell a load of 
+                people to go out and train harder until they get injured. <br/>
+                From what I can tell of looking at outputs from my people who have tested the tool, a score below 0.6 
+                seems to be a low risk of injury, and scores above .7 would warrant a bit of extra caution.
+                What I would like for users to do is take a look at the trends: Is your risk score
+                  increasing for the past few days, is it largely stable, or just fluctuating a little? 
+                  Either steady or rapid increases are probably cause for concern <br/>
+                The model can be used as a guide to help you make informed decisions about your training.
+                <br/>Please note that this tool is not a substitute for professional medical advice.
+                <br/><br/>               
+
+            
+                
+            </p>
             <p id="loading-message" style="display:none;">Processing... Should take about 2 minutes, Please wait.</p>
+            
             <script>
                 function showLoading() {
                     document.getElementById('loading-message').style.display = 'block';
@@ -146,7 +195,7 @@ async def login_form():
     return HTMLResponse(content=html_content)
 
 @app.post("/predict_and_visualize/")
-async def predict_and_visualize(email: str = Form(...), password: str = Form(...)):
+async def predict_and_visualize(email: str = Form(...), password: str = Form(...), zone3: int = Form(...), zone5: int = Form(...)):
     """
     perform spoof calculation and return an image
     """
