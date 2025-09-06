@@ -202,7 +202,7 @@ async def predict_and_visualize(email: str = Form(...), password: str = Form(...
     logger.info("Received request for injury risk prediction.")
     try:
         # run the full pipeline to get the image
-        img =  runitall(email, password)
+        img =  runitall(email, password, zone3, zone5)
         
         return StreamingResponse(img, media_type="image/png")
         
