@@ -103,7 +103,7 @@ def runitall(email: str, password: str):
     logger.info("Predictions made successfully.")
     # plot the probabilities over time with a rolling mean
     plt.figure(figsize=(10,5))
-    plt.plot(df['Date'],df['injury probabilities']#.rolling(window=3).mean())
+    plt.plot(df['Date'],df['injury probabilities'])#.rolling(window=3).mean())
     plt.xticks(df['Date'][::5], rotation=45, ha='right')
     plt.ylim(0, 1)
     # Save to buffer
