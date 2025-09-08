@@ -115,6 +115,7 @@ def runitall(email: str, password: str, zone3: int , zone5: int ):
     plt.plot(df['Date'],df['injury probabilities'])#.rolling(window=3).mean())
     plt.xticks(df['Date'][::5], rotation=45, ha='right')
     plt.ylim(0, 1)
+    plt.tight_layout()
     # Save to buffer
     buffer_img = io.BytesIO()
     plt.savefig(buffer_img, format="png")
@@ -136,7 +137,7 @@ async def login_form():
         <head><title>Injury Risk Prediction</title></head>
         <body>
             <h2>Login with Your Garmin Credentials to Generate Injury Risk Prediction</h2>
-            <p style="max-width:600px; font-size:14px; color:#333;">
+            <p style="max-width:800px; font-size:14px; color:#333;">
                 This tool connects to your Garmin data and uses your training history combined with a machine learning model 
                 to produce a visualisation of your short-term injury risk trends. 
                 Your credentials are only used in memory during processing and are not stored.
@@ -157,31 +158,6 @@ async def login_form():
                 <span id="z5val">180</span><br/><br/>
                 <button type="submit">Generate Prediction</button>
             </form>
-            <p style="max-width:600px; font-size:14px; color:#333;">
-                So the goal of this tool is to improve on the common reccomendations of 
-                "10percent increase in training load per week"
-                as a primary load management tool.<br/>
-                The model does this by taking into account both your recent acute training history in 
-                the most recent week as well as your 'form' for the past three weeks. <br/>
-                The model looks at not only your total training volume but also the intensity 
-                of that training, with heart rate zones as a proxy for intensity.<br/>
-                The model is trained on a large dataset of running training logs and injury records, 
-                and is able to identify patterns that are associated with increased injury risk. <br/>
-                The output is a risk score between 0 and 1, with higher scores indicating a higher risk. <br/>
-                Calibrating the model is particularly difficult, as I can't exactly tell a load of 
-                people to go out and train harder until they get injured. <br/>
-                From what I can tell of looking at outputs from my people who have tested the tool, a score below 0.6 
-                seems to be a low risk of injury, and scores above .7 would warrant a bit of extra caution.
-                What I would like for users to do is take a look at the trends: Is your risk score
-                  increasing for the past few days, is it largely stable, or just fluctuating a little? 
-                  Either steady or rapid increases are probably cause for concern <br/>
-                The model can be used as a guide to help you make informed decisions about your training.
-                <br/>Please note that this tool is not a substitute for professional medical advice.
-                <br/><br/>               
-
-            
-                
-            </p>
             <p id="loading-message" style="display:none;">Processing... Should take about 2 minutes, Please wait.</p>
             
             <script>
@@ -189,6 +165,40 @@ async def login_form():
                     document.getElementById('loading-message').style.display = 'block';
                 }
             </script>
+            <p style="max-width:800px; font-size:14px; color:#333;">
+                So the goal of this tool is to improve on the common reccomendations of 
+                "10percent increase in training load per week"
+                as a primary load management tool.<br/><br/>
+
+                The model does this by taking into account both your recent acute training history in 
+                the most recent week as well as your 'form' for the past three weeks. <br/><br/>
+
+                The model looks at not only your total training volume but also the intensity 
+                of that training, with heart rate zones as a proxy for intensity.<br/><br/>
+
+                The model is trained on a large dataset of running training logs and injury records, 
+                and is able to identify patterns that are associated with increased injury risk. <br/><br/>
+
+                The output is a risk score between 0 and 1, with higher scores indicating a higher risk. <br/><br/>
+                
+                Calibrating the model is particularly difficult, as I can't exactly tell a load of 
+                people to go out and train harder until they get injured. <br/><br/>
+
+                From what I can tell of looking at outputs from my people who have tested the tool, a score below 0.6 
+                seems to be a low risk of injury, and scores above .7 would warrant a bit of extra caution.
+                What I would like for users to do is take a look at the trends: Is your risk score
+                increasing for the past few days, is it largely stable, or just fluctuating a little? 
+                Either steady or rapid increases are probably cause for concern <br/><br/>
+
+                The model can be used as a guide to help you make informed decisions about your training.
+
+                <br/><br/>Please note that this tool is not a substitute for professional medical advice.
+                <br/><br/>               
+
+            
+                
+            </p>
+            
         </body>
     </html>
     """
