@@ -1,12 +1,15 @@
-from fastapi import FastAPI, Form, Response
-from fastapi.responses import HTMLResponse, StreamingResponse
 import pickle
 import matplotlib.pyplot as plt
 import io
 import logging
 import time
+import base64
+
 from PIL import Image
 from io import BytesIO
+from fastapi import FastAPI, Form, Response
+from fastapi.responses import HTMLResponse, StreamingResponse
+
 
 from apicall_input import main_api_call 
 from data_extraction_v2 import main_extract_transform
@@ -137,10 +140,22 @@ async def login_form():
         <head><title>Injury Risk Prediction</title></head>
         <body>
             <h2>Login with Your Garmin Credentials to Generate Injury Risk Prediction</h2>
-            <p style="max-width:800px; font-size:14px; color:#333;">
-                This tool connects to your Garmin data and uses your training history combined with a machine learning model 
-                to produce a visualisation of your short-term injury risk trends. 
-                Your credentials are only used in memory during processing and are not stored.
+            <p style="max-width:600px; font-size:14px; color:#333;">
+                So the goal of this tool is to improve on the common recommendation - 
+                "Increase mileage by maximum 10% per week" and serve as a guide for you to self 
+                manage your own training load.<br/><br/>
+                I've trained a model that does this by taking into account both your acute 
+                training history over the past week, as well as your 'form' over the past three weeks. <br/>
+                The model looks at not only your total training volume over those time periods but also the intensity 
+                of that training, with heart rate zones as a proxy for intensity.<br/><br/>
+                <b> Note that the model assumes that you have not been injured during 
+                the three weeks before any given predicted point(1/day)</b> <br/><br/>
+                The method you use to determine your hr zones will have a significant impact on the
+                results you get from this tool. Try to pick one that seems the most accurate
+                 based on your own percieved effort at that hr. <br/><br/>
+                This tool connects to your Garmin training history and uses the machine learning model 
+                to produce a visualisation of your injury risk trends for the past few months. <br/><br/>
+                Your credentials are only used in memory during processing and are not stored. <br/><br/>
             </p>
             <form action="/predict_and_visualize/" method="post" onsubmit="showLoading()">
                 <label> User Email:</label>
@@ -158,18 +173,85 @@ async def login_form():
                 <span id="z5val">180</span><br/><br/>
                 <button type="submit">Generate Prediction</button>
             </form>
-            <p id="loading-message" style="display:none;">Processing... Should take about 2 minutes, Please wait.</p>
+            <p id="loading-message" style="display:none;">Processing... Could take up to 2 minutes, hang in there.</p>
             
             <script>
                 function showLoading() {
                     document.getElementById('loading-message').style.display = 'block';
                 }
             </script>
-            <p style="max-width:800px; font-size:14px; color:#333;">
-                So the goal of this tool is to improve on the common reccomendations of 
-                "10percent increase in training load per week"
-                as a primary load management tool.<br/><br/>
+            
+            
+        </body>
+    </html>
+    """
+    return HTMLResponse(content=html_content)
 
+@app.post("/predict_and_visualize/")
+async def predict_and_visualize(email: str = Form(...), password: str = Form(...), zone3: int = Form(...), zone5: int = Form(...)):
+    """
+    perform spoof calculation and return an image
+    """
+    logger.info("Received request for injury risk prediction.")
+    try:
+        # run the full pipeline to get the image
+        img =  runitall(email, password, zone3, zone5)
+        
+           
+        # convert to base64 for embedding in <img>
+        img_base64 = base64.b64encode(img.getvalue()).decode("utf-8")
+
+        html_content = f"""
+        <html>
+            <head><title>Injury Risk Results</title></head>
+            <body>
+                <h2>Your Injury Risk Prediction</h2>
+                <p>Below is your personalized risk trend graph. Scroll down for notes on interpretation.</p>
+
+                <img src="data:image/png;base64,{img_base64}" alt="Injury Risk Graph" style="max-width:600px;"/>
+
+                <h3>How to interpret this:</h3>
+                <p>
+                    I would recommend that you use this tool to examine recent trends in your injury risk score: if 
+                    your score has been rising in the most recent segment of the graph, you might want to consider
+                    taking a bit of extra rest, or reducing your training load a little. <br/><br/>
+                    A score closer to 1.0 indicates higher risk, but from what I've seen so far, 
+                    if your score hasn't spent the past week above .6 then you should be in the clear. <br/><br/> 
+                    If people start reporting injuries to me, I'll update this with the score they've happened at. <br/><br/>
+                    The model was trained on a dataset of competitive runners who trained probably 5-7 
+                    days a week who competed at national level in the Netherlands. <br/><br/>
+                    I've done some things(normalisation) to have the model make it's predictions based on your own 
+                    relative effort, but the way these things work is that the less your training is comparable to the
+                    training in the dataset, the less reliable the predictions are likely to be. <br/><br/>
+                    The next thing is that this model is very much general purpose:<br/>
+                    If you have a history of a specific injury, or a chronic issue, 
+                    then this model is not going to be able to take that into account and will under predict your injury risk. <br/>
+                    If you have some form issue like a lagging glute med, a big leg length discrepancy, 
+                    or an overly aggressive heel strike, then your risk of injury is almost definitely higher than 
+                    what the model predicts, so if you aware of something like that, assume your injury risk is higher.<br/><br/>
+                    <b> If you have any more questions about how to interpret your results, please 
+                    get in touch with me at milomoran123@gmail.com or wherever I messaged you last</b> <br/><br/>
+                    Use this as a guide alongside your own judgement and professional advice, it is not a replacement to common sense.
+                </p>
+
+                <a href="/">← Back to Home</a>
+            </body>
+        </html>
+        """
+        return HTMLResponse(content=html_content)
+
+    except Exception as e:
+        logger.error(f"Prediction failed: {e}")
+        return HTMLResponse(content=f"<p>Error: {e}</p>", status_code=500)
+        
+
+    
+    except Exception as e:
+        logger.error(f"An error occurred in the prediction and visualization endpoint: {e}")
+        return {"something didn't go quite right with this. Try again to be sure but if no joy send me a quick email at milomoran123@gmail.com and I'll try to figure out what happened": str(e)}, 500
+'''
+<p style="max-width:600px; font-size:14px; color:#333;">
+                
                 The model does this by taking into account both your recent acute training history in 
                 the most recent week as well as your 'form' for the past three weeks. <br/><br/>
 
@@ -198,26 +280,4 @@ async def login_form():
             
                 
             </p>
-            
-        </body>
-    </html>
-    """
-    return HTMLResponse(content=html_content)
-
-@app.post("/predict_and_visualize/")
-async def predict_and_visualize(email: str = Form(...), password: str = Form(...), zone3: int = Form(...), zone5: int = Form(...)):
-    """
-    perform spoof calculation and return an image
-    """
-    logger.info("Received request for injury risk prediction.")
-    try:
-        # run the full pipeline to get the image
-        img =  runitall(email, password, zone3, zone5)
-        
-        return StreamingResponse(img, media_type="image/png")
-        
-
-    
-    except Exception as e:
-        logger.error(f"An error occurred in the prediction and visualization endpoint: {e}")
-        return {"something didn't go quite right with this. Try again to be sure but if no joy send me a quick email at milomoran123@gmail.com and I'll try to figure out what happened": str(e)}, 500
+'''
