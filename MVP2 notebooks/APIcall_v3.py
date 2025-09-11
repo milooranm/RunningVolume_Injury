@@ -134,21 +134,23 @@ def main_api_call(email=None, password=None, start_date=None, end_date=None):
     """Main function to download Garmin Connect activities."""
     print("Garmin Connect API - Activity Downloader")
 
-    custom_start = input("Do you want to enter a custom start date? Default start date is 100 days before today (y/n): ").lower()
-    if custom_start == 'y':
+    custom_end = input("Do you want to enter a custom end date? Default end date is today (y/n): ").lower()
+    if custom_end == 'y':
         while True:
-            start_date_str = input("Enter start date (YYYY-MM-DD): ")
+            end_date_str = input("Enter end date (YYYY-MM-DD): ")
             try:
-                start_date = datetime.datetime.strptime(start_date_str, '%Y-%m-%d')
-                end_date = start_date + datetime.timedelta(days=100)
+                end_date = datetime.datetime.strptime(end_date_str, '%Y-%m-%d')
                 break
             except ValueError:
                 print("Invalid date format. Please use YYYY-MM-DD.")
+        start_date = end_date - datetime.timedelta(days=100)
     else:
        
         
         end_date = datetime.date.today()
         start_date = end_date - datetime.timedelta(days=100)
+
+
 
 
     if not email or not password:

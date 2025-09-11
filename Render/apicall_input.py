@@ -19,41 +19,19 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def get_credentials():
-    """Get user credentials."""
-    email = input("Login e-mail: ")
-    password = getpass("Enter password: ")
-    return email, password
-
 
 def init_api(email, password): #remove tokenstore
     """Initialize Garmin API with your credentials."""
-    '''
-    try:
-        garmin = Garmin(
-            email=email, password=password, is_cn=False, return_on_mfa=True
-        )
-        garmin.login()
-
-    except (GarminConnectAuthenticationError,
-            GarminConnectConnectionError,
-            GarminConnectTooManyRequestsError,
-            requests.exceptions.HTTPError) as err:
-        logger.error(err)
-        return None
-    '''
     try:
         garmin = Garmin(email, password)
         garmin.login()
         print("Login successful!")
     except Exception as e:
+        logger.error(e)
         print(f"An error occurred during login: {e}")
+
     return garmin
 
-
-def get_mfa():
-    """Get MFA."""
-    return input("MFA one-time code: ")
 
 
 def get_activity_files(api, start_date, end_date, output_dir="./"):
@@ -105,13 +83,13 @@ def get_activity_dataframes(api, start_date, end_date):
             activity_start_time = datetime.datetime.strptime(
                 activity["startTimeLocal"], "%Y-%m-%d %H:%M:%S"
             ).strftime("%d-%m-%Y")
+            activity_type = activity.get('activityType', {}).get('typeKey', 'unknown')
+        
             activity_id = activity["activityId"]
-            activity_name = activity["activityName"]
-
             csv_data = api.download_activity(
                 activity_id, dl_fmt=api.ActivityDownloadFormat.CSV
             )
-            filename = f"{activity_name}_{activity_start_time}_{activity_id}.csv"
+            filename = f"{activity_type}|{activity_start_time}|{activity_id}.csv"
             # Read CSV data into DataFrame
             df = pd.read_csv(BytesIO(csv_data))
             # Append to the list
@@ -130,35 +108,23 @@ def get_activity_dataframes(api, start_date, end_date):
     return activity_data
 
 
-def main_api_call(email=None, password=None, start_date=None, end_date=None): 
+def main_api_call(email=None, password=None): 
     """Main function to download Garmin Connect activities."""
     print("Garmin Connect API - Activity Downloader")
 
-    custom_start = input("Do you want to enter a custom start date? Default start date is 100 days before today (y/n): ").lower()
-    if custom_start == 'y':
-        while True:
-            start_date_str = input("Enter start date (YYYY-MM-DD): ")
-            try:
-                start_date = datetime.datetime.strptime(start_date_str, '%Y-%m-%d')
-                end_date = start_date + datetime.timedelta(days=100)
-                break
-            except ValueError:
-                print("Invalid date format. Please use YYYY-MM-DD.")
-    else:
-       
-        
-        end_date = datetime.date.today()
-        start_date = end_date - datetime.timedelta(days=100)
-
+    
+    end_date = datetime.date.today()
+    start_date = end_date - datetime.timedelta(days=60)
 
     if not email or not password:
-        email, password = get_credentials()
+        print("Email and password are required for authentication.")
+        return 0, 0, 0
 
     api = init_api(email, password)
 
     if not api:
         print("Failed to initialize Garmin API. Exiting.")
-        return None, None
+        return None, None, None
 
     if not end_date:
         end_date = datetime.datetime.now()
