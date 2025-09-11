@@ -103,4 +103,3 @@ fastapi
 seaborn
 uvicorn
 python-multipart==0.0.20
-import base64
