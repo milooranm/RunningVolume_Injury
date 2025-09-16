@@ -140,7 +140,7 @@ def main_api_call(email=None, password=None, start_date=None, end_date=None):
             start_date_str = input("Enter start date (YYYY-MM-DD): ")
             try:
                 start_date = datetime.datetime.strptime(start_date_str, '%Y-%m-%d')
-                end_date = start_date + datetime.timedelta(days=150)
+                end_date = start_date + datetime.timedelta(days=200)
                 break
             except ValueError:
                 print("Invalid date format. Please use YYYY-MM-DD.")
@@ -148,7 +148,7 @@ def main_api_call(email=None, password=None, start_date=None, end_date=None):
        
         
         end_date = datetime.date.today()
-        start_date = end_date - datetime.timedelta(days=150)
+        start_date = end_date - datetime.timedelta(days=200)
 
 
     if not email or not password:
