@@ -114,7 +114,7 @@ def main_api_call(email=None, password=None):
 
     
     end_date = datetime.date.today()
-    start_date = end_date - datetime.timedelta(days=150)
+    start_date = end_date - datetime.timedelta(days=120)
 
     if not email or not password:
         print("Email and password are required for authentication.")
