@@ -64,6 +64,11 @@ def runitall(email: str, password: str, zone3: int , zone5: int ):
             password: str : user password for api call
         return: buffer_img : image buffer with the plot
     """
+    # Sanity Check
+    if zone5 <= zone3:
+        raise ValueError("Zone 5 is by definition a higher hr than zone 3, try again,"
+        " and if you aren't sure of your own heart rate zones,try z3 = 150 and z5 = 180 as an estimate")
+    
     # import model
     try: 
 
@@ -81,7 +86,7 @@ def runitall(email: str, password: str, zone3: int , zone5: int ):
     try:    
         start_date, end_date, df_memory = main_api_call(email, password)
     except Exception as e:
-        logger.error(f"An error occurred during the API call: {e}")
+        logger.error(f"An error occurred during the API call: make sure email and password are correct, and try again")
         raise
     logger.info("API call completed successfully.")
     try: 
@@ -90,6 +95,7 @@ def runitall(email: str, password: str, zone3: int , zone5: int ):
         logger.error(f"An error occurred during data extraction and transformation: {e}")
         raise
     logger.info("Data extraction and transformation completed successfully.")
+
     # add the normalisation step
     try:
         norm_df= norm_user_data(df)
@@ -97,6 +103,7 @@ def runitall(email: str, password: str, zone3: int , zone5: int ):
         logger.error(f"An error occurred during data normalization: {e}")
         raise
     logger.info("Data normalization completed successfully.")
+    
     # make predictions
     try:
         df['injury probabilities'] = model.predict_proba(norm_df)[:, 1]

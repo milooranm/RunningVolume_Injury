@@ -34,7 +34,8 @@ def init_api(email, password):
     return garmin
 
 
-# Deprecated function prior to in-memory handling
+# Deprecated function prior to in-memory handling!!!
+'''
 def get_activity_files(api, start_date, end_date, output_dir="./"):
     """Downloads activity files within a date range."""
     
@@ -66,14 +67,16 @@ def get_activity_files(api, start_date, end_date, output_dir="./"):
     ) as err:
         logger.error(err)
         print("Error downloading activities.")
+'''
 
+# create a map for what cols I want and apply it to everything going through
 def get_activity_dataframes(api, start_date, end_date):
     """
     Retrieves activity data within a date range and returns a list of dictionaries,
     each containing the filename and its corresponding DataFrame.
     """
     activity_data = []
-
+    # see can I
     try:
         activities = api.get_activities_by_date(
             start_date.isoformat(), end_date.isoformat()
@@ -92,18 +95,20 @@ def get_activity_dataframes(api, start_date, end_date):
             filename = f"{activity_type}|{activity_start_time}|{activity_id}.csv"
             # Read CSV data into DataFrame
             df = pd.read_csv(BytesIO(csv_data))
+            #explain
             # Append to the list
             activity_data.append({"filename": filename, "df": df})
+            # do as njust ddict?
 
             print(f"Activity data for '{filename}' loaded into DataFrame.")
-
+# what 
     except (
         GarminConnectConnectionError,
         GarminConnectAuthenticationError,
         GarminConnectTooManyRequestsError,
         requests.exceptions.HTTPError,
     ) as err:
-        logger.error(err)
+        logger.error(f'error in get_activity_dataframes :{err}')
         print(f"Error downloading activities: {err}")
 
     return activity_data
@@ -134,12 +139,12 @@ def main_api_call(email=None, password=None):
 
 if __name__ == "__main__":
 
-    if len(sys.argv) != 3:
-        print('correct usage requires email and password space separated')
-        sys.exit(1)
+    #if len(sys.argv) != 3:
+        #print('correct usage requires email and password space separated')
+        # sys.exit(1)
         
-    email = sys.argv[1]
-    password = sys.argv[2]
+    email = 'milomoran123@gmail.com' # sys.argv[1]
+    password = '1@Agarmin' #sys.argv[2]
 
 
     start_date ,end_date, name_and_data = main_api_call(email, password)
