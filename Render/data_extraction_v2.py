@@ -3,14 +3,15 @@ import numpy as np
 import re
 import logging
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from pathlib import Path
 
 from io import BytesIO
+from typing import Dict, List, Optional, Tuple
 
 from apicall_input import main_api_call 
 
-def create_emptydf(start_date,end_date):
+def create_emptydf(start_date: datetime.date, end_date: datetime.date) -> pd.DataFrame:
     """
     Creates empty DataFrame with date range
     Args:
@@ -21,6 +22,7 @@ def create_emptydf(start_date,end_date):
     """
     #go over all my time handling
     # typehinting!!!
+    '''
     start_date = str(start_date)
     end_date = str(end_date)
     # Convert start_date to a consistent format
@@ -29,8 +31,8 @@ def create_emptydf(start_date,end_date):
 
     end_date = end_date.split(' ')[0]  # Remove time if present
     end = datetime.strptime(end_date, '%Y-%m-%d')
-    
-    date_range = pd.date_range(start, end)
+    '''
+    date_range = pd.date_range(start_date, end_date)
 
     df = pd.DataFrame({'Date': date_range})
     
@@ -42,42 +44,50 @@ def create_emptydf(start_date,end_date):
     df['hours alternative'] = 0.00
     return df
 
-def readfiles(df_dict):
+def readfiles(df_dict: Dict) -> Tuple[Dict, Dict]:
     """
     Reads files from a list of dictionaries and categorizes them as either 'running' or 'other' activities.
     """
-    running_activities = []
-    other_activities = []
+    running_activities = {}
+    other_activities = {}
 
     # Regex pattern for filenames containing 'running_'
     running_pattern = re.compile(r".*running.*\.csv$", re.IGNORECASE)
 
     # Iterate through each dictionary in the list
-    for data_dict in df_dict:
+    '''for data_dict in df_dict:
         filename = data_dict["filename"]
         if running_pattern.match(filename):
             running_activities.append(data_dict)
         else:
-            other_activities.append(data_dict)
+            other_activities.append(data_dict)'''
+    
+    for filename, df in df_dict.items():
+        if running_pattern.match(filename):
+            running_activities[filename] = df
+        else :
+            other_activities[filename] = df
+
 
     return running_activities, other_activities
 
 # there were files doing this very much not in memory
-def populatebydate_memory(emptydf, run_activities, other_activities, Z3_min, Z5_min):
+def populatebydate_memory(emptydf: pd.DataFrame, run_activities: Dict, other_activities: Dict, Z3_min: int, Z5_min: int)-> pd.DataFrame:
     """
     Populates the empty DataFrame with data from running and other activities for a given date
     """
+    # can I apply the map here?
     for i in emptydf['Date']:
-        for activity in run_activities:
-            filedate = datetime.strptime(activity['filename'].split('|')[1], '%d-%m-%Y').strftime('%Y-%m-%d')
+        for filename, df in run_activities.items():
+            filedate = datetime.strptime(filename.split('|')[1], '%d-%m-%Y').strftime('%Y-%m-%d')
             if filedate == i:
                 emptydf.loc[emptydf['Date'] == filedate, 'nr. sessions'] += 1
-                populateone_memory(emptydf, activity['df'], filedate, Z3_min, Z5_min)
+                populateone_memory(emptydf, df, filedate, Z3_min, Z5_min)
 
-        for activity in other_activities:
-            filedate = datetime.strptime(activity['filename'].split('|')[1], '%d-%m-%Y').strftime('%Y-%m-%d')
+        for filename, df in other_activities.items():
+            filedate = datetime.strptime(filename.split('|')[1], '%d-%m-%Y').strftime('%Y-%m-%d')
             if filedate == i:
-                temp_df = activity['df']
+                temp_df = df
                 time_str = temp_df['Time'].iloc[-1]
                 time_obj = datetime.strptime(time_str, '%H:%M:%S.%f').time()
                 time_delta = timedelta(hours=time_obj.hour, minutes=time_obj.minute, seconds=time_obj.second, microseconds=time_obj.microsecond)

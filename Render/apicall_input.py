@@ -8,6 +8,8 @@ import requests
 from io import BytesIO
 import pandas as pd
 
+
+from typing import List, Dict, Optional, Tuple
 from garminconnect import (
     Garmin,
     GarminConnectAuthenticationError,
@@ -21,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 
-def init_api(email, password):
+def init_api(email: str, password: str) -> Optional[Garmin]:
     """Initialize Garmin API with your credentials."""
     try:
         garmin = Garmin(email, password)
@@ -69,14 +71,13 @@ def get_activity_files(api, start_date, end_date, output_dir="./"):
         print("Error downloading activities.")
 '''
 
-# create a map for what cols I want and apply it to everything going through
-def get_activity_dataframes(api, start_date, end_date):
+# create a map for what cols I want and apply it to everything going through?
+def get_activity_dataframes(api: Garmin, start_date: datetime.date, end_date: datetime.date) -> Dict[str, pd.DataFrame]: 
     """
     Retrieves activity data within a date range and returns a list of dictionaries,
     each containing the filename and its corresponding DataFrame.
     """
-    activity_data = []
-    # see can I
+    activity_dict = {}
     try:
         activities = api.get_activities_by_date(
             start_date.isoformat(), end_date.isoformat()
@@ -95,11 +96,9 @@ def get_activity_dataframes(api, start_date, end_date):
             filename = f"{activity_type}|{activity_start_time}|{activity_id}.csv"
             # Read CSV data into DataFrame
             df = pd.read_csv(BytesIO(csv_data))
-            #explain
+            #explain how BytesIO works
             # Append to the list
-            activity_data.append({"filename": filename, "df": df})
-            # do as njust ddict?
-
+            activity_dict[filename] = df
             print(f"Activity data for '{filename}' loaded into DataFrame.")
 # what 
     except (
@@ -111,10 +110,10 @@ def get_activity_dataframes(api, start_date, end_date):
         logger.error(f'error in get_activity_dataframes :{err}')
         print(f"Error downloading activities: {err}")
 
-    return activity_data
+    return activity_dict
 
 
-def main_api_call(email=None, password=None): 
+def main_api_call(email: str =None, password: str = None) -> Tuple[datetime.date, datetime.date, Dict[str, pd.DataFrame]]: 
     """Main function to download Garmin Connect activities."""
     print("Garmin Connect API - Activity Downloader")
 
