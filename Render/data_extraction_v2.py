@@ -37,8 +37,22 @@ def populatebydate_memory(emptydf: pd.DataFrame, run_daily: List[Dict], other_da
     Populates the empty DataFrame with summed data per date from running and other activities.
     """
     # Build quick lookup maps keyed by day string (DD-MM-YYYY)
-    run_map: Dict[str, Dict] = {entry['date']: entry for entry in run_daily}
-    other_map: Dict[str, Dict] = {entry['date']: entry for entry in other_daily}
+    run_map: Dict[str, Dict] = {}
+    for entry in run_daily:
+        day = entry['date']
+        if day not in run_map:
+            run_map[day] = {'date': day,'nr. sessions': 0,'total_km': 0.0,'km_z34': 0.0,'km_z5plus': 0.0}
+        run_map[day]['nr. sessions'] += entry.get('nr. sessions', 0)
+        run_map[day]['total_km'] += entry.get('total_km', 0.0)
+        run_map[day]['km_z34'] += entry.get('km_z34', 0.0)
+        run_map[day]['km_z5plus'] += entry.get('km_z5plus', 0.0)
+
+    other_map: Dict[str, Dict] = {}
+    for entry in other_daily:
+        day = entry['date']
+        if day not in other_map:
+            other_map[day] = {'date': day,'hours_alternative': 0.0,}
+        other_map[day]['hours_alternative'] += entry.get('hours_alternative', 0.0)
 
     for day in emptydf['Date']:
         if day in run_map:
