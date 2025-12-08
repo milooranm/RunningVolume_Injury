@@ -20,23 +20,10 @@ def create_emptydf(start_date: datetime.date, end_date: datetime.date) -> pd.Dat
     Returns:
         empty (df): Eempty df ready for population
     """
-    #go over all my time handling
-    # typehinting!!!
-    '''
-    start_date = str(start_date)
-    end_date = str(end_date)
-    # Convert start_date to a consistent format
-    start_date = start_date.split(' ')[0]  # Remove time if present
-    start = datetime.strptime(start_date, '%Y-%m-%d')
-
-    end_date = end_date.split(' ')[0]  # Remove time if present
-    end = datetime.strptime(end_date, '%Y-%m-%d')
-    '''
     date_range = pd.date_range(start_date, end_date)
-
     df = pd.DataFrame({'Date': date_range})
     
-    df['Date'] = df['Date'].dt.strftime('%Y-%m-%d')
+    df['Date'] = df['Date'].dt.strftime('%d-%m-%Y')
     df['nr. sessions'] = 0
     df['total km'] = 0.00
     df['km Z3-4'] = 0.00
@@ -44,87 +31,26 @@ def create_emptydf(start_date: datetime.date, end_date: datetime.date) -> pd.Dat
     df['hours alternative'] = 0.00
     return df
 
-def readfiles(df_dict: Dict) -> Tuple[Dict, Dict]:
-    """
-    Reads files from a list of dictionaries and categorizes them as either 'running' or 'other' activities.
-    """
-    running_activities = {}
-    other_activities = {}
-
-    # Regex pattern for filenames containing 'running_'
-    running_pattern = re.compile(r".*running.*\.csv$", re.IGNORECASE)
-
-    # Iterate through each dictionary in the list
-    '''for data_dict in df_dict:
-        filename = data_dict["filename"]
-        if running_pattern.match(filename):
-            running_activities.append(data_dict)
-        else:
-            other_activities.append(data_dict)'''
-    
-    for filename, df in df_dict.items():
-        if running_pattern.match(filename):
-            running_activities[filename] = df
-        else :
-            other_activities[filename] = df
-
-
-    return running_activities, other_activities
-
 # there were files doing this very much not in memory
-def populatebydate_memory(emptydf: pd.DataFrame, run_activities: Dict, other_activities: Dict, Z3_min: int, Z5_min: int)-> pd.DataFrame:
+def populatebydate_memory(emptydf: pd.DataFrame, run_daily: List[Dict], other_daily: List[Dict], Z3_min: int, Z5_min: int)-> pd.DataFrame:
     """
-    Populates the empty DataFrame with data from running and other activities for a given date
+    Populates the empty DataFrame with summed data per date from running and other activities.
     """
-    # can I apply the map here?
-    for i in emptydf['Date']:
-        for filename, df in run_activities.items():
-            filedate = datetime.strptime(filename.split('|')[1], '%d-%m-%Y').strftime('%Y-%m-%d')
-            if filedate == i:
-                emptydf.loc[emptydf['Date'] == filedate, 'nr. sessions'] += 1
-                populateone_memory(emptydf, df, filedate, Z3_min, Z5_min)
+    # Build quick lookup maps keyed by day string (DD-MM-YYYY)
+    run_map: Dict[str, Dict] = {entry['date']: entry for entry in run_daily}
+    other_map: Dict[str, Dict] = {entry['date']: entry for entry in other_daily}
 
-        for filename, df in other_activities.items():
-            filedate = datetime.strptime(filename.split('|')[1], '%d-%m-%Y').strftime('%Y-%m-%d')
-            if filedate == i:
-                temp_df = df
-                time_str = temp_df['Time'].iloc[-1]
-                time_obj = datetime.strptime(time_str, '%H:%M:%S.%f').time()
-                time_delta = timedelta(hours=time_obj.hour, minutes=time_obj.minute, seconds=time_obj.second, microseconds=time_obj.microsecond)
-
-                hours_alternative = round(time_delta.total_seconds() / 3600, 2)
-                emptydf.loc[emptydf['Date'] == filedate, 'hours alternative'] = hours_alternative
+    for day in emptydf['Date']:
+        if day in run_map:
+            r = run_map[day]
+            emptydf.loc[emptydf['Date'] == day, 'nr. sessions'] += r.get('nr. sessions', 0)
+            emptydf.loc[emptydf['Date'] == day, 'total km'] += r.get('total_km', 0.0)
+            emptydf.loc[emptydf['Date'] == day, 'km Z3-4'] += r.get('km_z34', 0.0)
+            emptydf.loc[emptydf['Date'] == day, 'km Z5-T1-T2'] += r.get('km_z5plus', 0.0)
+        if day in other_map:
+            emptydf.loc[emptydf['Date'] == day, 'hours alternative'] += other_map[day].get('hours_alternative', 0.0)
 
     return emptydf
-
-def populateone_memory(df_prepop, file_df, filedate, Z3_min, Z5_min):
-    """
-    Populates the empty DataFrame with the data from the file
-    """
-    file_df['Distance'] = pd.to_numeric(file_df['Distance'], errors='coerce')
-
-    df_prepop.loc[df_prepop['Date'] == filedate, 'total km'] += file_df['Distance'].iloc[-1]
-
-    segment = file_df.iloc[:-1]
-    hr = segment['Avg HR']
-    distance = segment['Distance']
-    z34_sum = float(distance[(hr >= Z3_min) & (hr < Z5_min)].sum())
-    z5_sum  = float(distance[hr >= Z5_min].sum())
-
-    df_prepop.loc[df_prepop['Date'] == filedate, 'km Z3-4'] += z34_sum
-    df_prepop.loc[df_prepop['Date'] == filedate, 'km Z5-T1-T2'] += z5_sum
-
-
-
-    '''for idx, row in file_df.iloc[:-1].iterrows():
-        hr = row['Avg HR']
-        distance = row['Distance']
-        if Z3_min <= hr < Z5_min:
-            df_prepop.loc[df_prepop['Date'] == filedate, 'km Z3-4'] += distance
-        elif hr >= Z5_min:
-            df_prepop.loc[df_prepop['Date'] == filedate, 'km Z5-T1-T2'] += distance'''
-
-    return df_prepop
 
 def convert_to_day_approach(df):
     """
@@ -150,7 +76,7 @@ def convert_to_day_approach(df):
 
     return df_converted 
 
-def initial_transform(start_date, end_date, df_memory, Z3_min = 135, Z5_min = 173):   
+def initial_transform(start_date, end_date, runs, other, Z3_min = 135, Z5_min = 173):   
     """
     Main function to extract and transform data.
     """
@@ -161,9 +87,7 @@ def initial_transform(start_date, end_date, df_memory, Z3_min = 135, Z5_min = 17
         print("Please enter valid numbers for heart rate zone thresholds.")
    
     empty = create_emptydf(start_date, end_date)
-    r,o = readfiles(df_memory)
-    
-    df_full = populatebydate_memory(empty, r, o, Z3_min, Z5_min)
+    df_full = populatebydate_memory(empty, runs, other, Z3_min, Z5_min)
     
     # Convert to day approach format
     dfday_user = convert_to_day_approach(df_full)
@@ -309,8 +233,8 @@ def refactor(df):
     
     return combodf
 
-def main_extract_transform(start_date, end_date, df_memory, Z3_min = 135, Z5_min = 173):
-    df = initial_transform(start_date, end_date, df_memory, Z3_min, Z5_min)
+def main_extract_transform(start_date, end_date, runs, other, Z3_min = 135, Z5_min = 173):
+    df = initial_transform(start_date, end_date, runs, other, Z3_min, Z5_min)
     refactored_df = refactor(df)
     print(refactored_df)
     return refactored_df

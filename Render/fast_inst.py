@@ -78,7 +78,7 @@ def runitall(email: str, password: str, zone3: int , zone5: int ) -> BytesIO:
         with open('mvp2best_logistic_model.pkl', 'rb') as file:
             model = pickle.load(file)
     except FileNotFoundError:
-        logger.error("Model file not found. Please ensure 'mvp2best_logistic_model.pkl' is in the 'models' directory.")
+        logger.error("Model file not found. Please ensure 'mvp2best_logistic_model.pkl' is in the project directory.")
         raise
     except Exception as e:
         logger.error(f"An error occurred while loading the model: {e}")
@@ -87,13 +87,13 @@ def runitall(email: str, password: str, zone3: int , zone5: int ) -> BytesIO:
 
     #pipeline steps
     try:    
-        start_date, end_date, df_memory = main_api_call(email, password)
+        start_date, end_date, runs, other = main_api_call(email, password)
     except Exception as e:
         logger.error(f"An error occurred during the API call: make sure email and password are correct, and try again")
         raise
     logger.info("API call completed successfully.")
     try: 
-        df = main_extract_transform(start_date, end_date, df_memory, zone3, zone5)
+        df = main_extract_transform(start_date, end_date, runs, other, zone3, zone5)
     except Exception as e:
         logger.error(f"An error occurred during data extraction and transformation: {e}")
         raise
