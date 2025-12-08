@@ -3,37 +3,27 @@ import numpy as np
 import re
 import logging
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from pathlib import Path
 
 from io import BytesIO
+from typing import Dict, List, Optional, Tuple
 
 from apicall_input import main_api_call 
 
-def create_emptydf(start_date,end_date):
+def create_emptydf(start_date: datetime.date, end_date: datetime.date) -> pd.DataFrame:
     """
     Creates empty DataFrame with date range
     Args:
         start_date (str): Start date in 'yyyy-mm-dd' format
         end_date (str): End date in 'yyyy-mm-dd' format
-        
     Returns:
         empty (df): Eempty df ready for population
     """
-    start_date = str(start_date)
-    end_date = str(end_date)
-    # Convert start_date to a consistent format
-    start_date = start_date.split(' ')[0]  # Remove time if present
-    start = datetime.strptime(start_date, '%Y-%m-%d')
-
-    end_date = end_date.split(' ')[0]  # Remove time if present
-    end = datetime.strptime(end_date, '%Y-%m-%d')
-    
-    date_range = pd.date_range(start, end)
-
+    date_range = pd.date_range(start_date, end_date)
     df = pd.DataFrame({'Date': date_range})
     
-    df['Date'] = df['Date'].dt.strftime('%Y-%m-%d')
+    df['Date'] = df['Date'].dt.strftime('%d-%m-%Y')
     df['nr. sessions'] = 0
     df['total km'] = 0.00
     df['km Z3-4'] = 0.00
@@ -41,17 +31,49 @@ def create_emptydf(start_date,end_date):
     df['hours alternative'] = 0.00
     return df
 
+# there were files doing this very much not in memory
+def populatebydate_memory(emptydf: pd.DataFrame, run_daily: List[Dict], other_daily: List[Dict], Z3_min: int, Z5_min: int)-> pd.DataFrame:
+    """
+    Populates the empty DataFrame with summed data per date from running and other activities.
+    """
+    # Build quick lookup maps keyed by day string (DD-MM-YYYY)
+    run_map: Dict[str, Dict] = {}
+    for entry in run_daily:
+        day = entry['date']
+        if day not in run_map:
+            run_map[day] = {'date': day,'nr. sessions': 0,'total_km': 0.0,'km_z34': 0.0,'km_z5plus': 0.0}
+        run_map[day]['nr. sessions'] += entry.get('nr. sessions', 0)
+        run_map[day]['total_km'] += entry.get('total_km', 0.0)
+        run_map[day]['km_z34'] += entry.get('km_z34', 0.0)
+        run_map[day]['km_z5plus'] += entry.get('km_z5plus', 0.0)
+
+    other_map: Dict[str, Dict] = {}
+    for entry in other_daily:
+        day = entry['date']
+        if day not in other_map:
+            other_map[day] = {'date': day,'hours_alternative': 0.0,}
+        other_map[day]['hours_alternative'] += entry.get('hours_alternative', 0.0)
+
+    for day in emptydf['Date']:
+        if day in run_map:
+            r = run_map[day]
+            emptydf.loc[emptydf['Date'] == day, 'nr. sessions'] += r.get('nr. sessions', 0)
+            emptydf.loc[emptydf['Date'] == day, 'total km'] += r.get('total_km', 0.0)
+            emptydf.loc[emptydf['Date'] == day, 'km Z3-4'] += r.get('km_z34', 0.0)
+            emptydf.loc[emptydf['Date'] == day, 'km Z5-T1-T2'] += r.get('km_z5plus', 0.0)
+        if day in other_map:
+            emptydf.loc[emptydf['Date'] == day, 'hours alternative'] += other_map[day].get('hours_alternative', 0.0)
+
+    return emptydf
+
 def convert_to_day_approach(df):
     """
     Converts the DataFrame to a day approach format.
-    
     Args:
         df (DataFrame): The DataFrame to convert.
-        
     Returns:
         DataFrame: The converted DataFrame into a format with 7 lagging days 
         before each date in the format 
-
     """
     feature_cols = ['nr. sessions', 'total km', 'km Z3-4', 'km Z5-T1-T2', 'hours alternative']
     df_converted = pd.DataFrame()
@@ -59,83 +81,16 @@ def convert_to_day_approach(df):
         for col in feature_cols:
             df_converted[f'{col}.{i}'] = df[col].shift(i)  
     df_converted['Date'] = df['Date']
-    # drop rows with NaN values using dropna() with index as the row
+
+    # drop rows at the top with NaN values 
     df_converted = df_converted.dropna()
 
-    # replace the name of the column with the name of the column without the last 2 characters
+    # remove suffix for the first set of columns to match prediction model columns
     df_converted = df_converted.rename(columns={col: col[:-2] for col in df_converted.columns if col.endswith('.0')})
 
-
-    # return df_lagged
     return df_converted 
 
-def readfiles(df_dict):
-    """
-    Reads files from a list of dictionaries and categorizes them into running and other activities.
-    """
-    running_activities = []
-    other_activities = []
-
-    # Regex pattern for filenames containing 'running_'
-    # re.compile pre-compiles the regex for efficiency if used in a loop
-    running_pattern = re.compile(r".*running.*\.csv$", re.IGNORECASE)
-
-    # Iterate through each dictionary in the list
-    for data_dict in df_dict:
-        filename = data_dict["filename"]
-    
-    # Check if the filename matches the regex pattern
-        if running_pattern.match(filename):
-            running_activities.append(data_dict)
-        else:
-            other_activities.append(data_dict)
-   
-
-    return running_activities,other_activities
-
-def populateone_memory(df_prepop, file_df, filedate, Z3_min, Z5_min):
-    """
-    Populates the empty DataFrame with the data from the file
-    """
-    file_df['Distance'] = pd.to_numeric(file_df['Distance'], errors='coerce')
-
-    df_prepop.loc[df_prepop['Date'] == filedate, 'total km'] += file_df['Distance'].iloc[-1]
-
-    for idx, row in file_df.iloc[:-1].iterrows():
-        hr = row['Avg HR']
-        distance = row['Distance']
-        if Z3_min <= hr < Z5_min:
-            df_prepop.loc[df_prepop['Date'] == filedate, 'km Z3-4'] += distance
-        elif hr >= Z5_min:
-            df_prepop.loc[df_prepop['Date'] == filedate, 'km Z5-T1-T2'] += distance
-
-    return df_prepop
-
-def populatebydate_memory(emptydf, run_activities, other_activities, Z3_min, Z5_min):
-    """
-    Populates the empty DataFrame with data from running and other activities for a given date
-    """
-    for i in emptydf['Date']:
-        for activity in run_activities:
-            filedate = datetime.strptime(activity['filename'].split('|')[1], '%d-%m-%Y').strftime('%Y-%m-%d')
-            if filedate == i:
-                emptydf.loc[emptydf['Date'] == filedate, 'nr. sessions'] += 1
-                populateone_memory(emptydf, activity['df'], filedate, Z3_min, Z5_min)
-
-        for activity in other_activities:
-            filedate = datetime.strptime(activity['filename'].split('|')[1], '%d-%m-%Y').strftime('%Y-%m-%d')
-            if filedate == i:
-                temp_df = activity['df']
-                time_str = temp_df['Time'].iloc[-1]
-                time_obj = datetime.strptime(time_str, '%H:%M:%S.%f').time()
-                time_delta = timedelta(hours=time_obj.hour, minutes=time_obj.minute, seconds=time_obj.second, microseconds=time_obj.microsecond)
-
-                hours_alternative = round(time_delta.total_seconds() / 3600, 2)
-                emptydf.loc[emptydf['Date'] == filedate, 'hours alternative'] = hours_alternative
-
-    return emptydf
-
-def initial_transform(start_date, end_date, df_memory, Z3_min = 135, Z5_min = 173):   
+def initial_transform(start_date, end_date, runs, other, Z3_min = 135, Z5_min = 173):   
     """
     Main function to extract and transform data.
     """
@@ -144,18 +99,19 @@ def initial_transform(start_date, end_date, df_memory, Z3_min = 135, Z5_min = 17
         Z5_min = int(Z5_min)
     except ValueError:
         print("Please enter valid numbers for heart rate zone thresholds.")
-
    
     empty = create_emptydf(start_date, end_date)
-    r,o = readfiles(df_memory)
-    
-    df_full = populatebydate_memory(empty, r, o, Z3_min, Z5_min)
+    df_full = populatebydate_memory(empty, runs, other, Z3_min, Z5_min)
     
     # Convert to day approach format
     dfday_user = convert_to_day_approach(df_full)
     
     return dfday_user
 
+# I wanted to feature engineer some columns and condense some others, 
+# so I have like three functions of slop trying to apply what I applied to the training dataset here
+# took me a lot of painstaking spot checks to be sure they worked, 
+# possibly could have written unit tests for them instead
 def create_combodf(df):
     """
     Create a DataFrame with day-based aggregations.
@@ -272,6 +228,7 @@ def calculate_ratios_and_acwr(newdf,combodf,weekly_df):
     combodf['5day/3W hours alternative training ratio'] = np.where( week3hoursalt != 0, (day5hoursalt / week3hoursalt).round(3),0)
     
     # ACWR
+    # explain my arbitrary formula here
     combodf['ACWR'] = np.where(
         (week3totkm + (week3propz3plus * week3totkm)) != 0,
         ((day5totkm + (day5propz3plus* day5totkm))*4)/ 
@@ -290,8 +247,8 @@ def refactor(df):
     
     return combodf
 
-def main_extract_transform(start_date, end_date, df_memory, Z3_min = 135, Z5_min = 173):
-    df = initial_transform(start_date, end_date, df_memory, Z3_min, Z5_min)
+def main_extract_transform(start_date, end_date, runs, other, Z3_min = 135, Z5_min = 173):
+    df = initial_transform(start_date, end_date, runs, other, Z3_min, Z5_min)
     refactored_df = refactor(df)
     print(refactored_df)
     return refactored_df

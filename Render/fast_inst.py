@@ -1,12 +1,15 @@
 import pickle
 import matplotlib.pyplot as plt
+import pandas as pd
 import io
 import logging
 import time
 import base64
 
+
 from PIL import Image
 from io import BytesIO
+from typing import Dict, List, Optional, Tuple
 from fastapi import FastAPI, Form, Response
 from fastapi.responses import HTMLResponse, StreamingResponse
 
@@ -34,43 +37,48 @@ file_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
 logger.addHandler(file_handler)
 
-def normalize_user(row, mean_df, std_df):
+def normalize_user(row: pd.Series, mean_df: pd.Series, std_df: pd.Series) -> pd.Series:
     z = (row - mean_df) / std_df
     return z
 
-def getMeanStd_user(data):
+def getMeanStd_user(data: pd.DataFrame) -> Tuple[pd.Series, pd.Series]:
     # drop the date column while the normalisaition is going on
     data_no_date = data.drop(columns =['Date'], errors = 'ignore')
     mean = data_no_date.mean()
     std = data_no_date.std()
-    std.replace(to_replace=0.0, value=0.01, inplace=True)
+    std.replace(0.0, 0.01)
     return mean, std
 
-def norm_user_data(df):
+def norm_user_data(df: pd.DataFrame) -> pd.DataFrame:
     """
     normalize the user data
     """
     # Get the mean + std dev
-    user_test_means, user_test_std = getMeanStd_user(df.copy())
+    user_means, user_std = getMeanStd_user(df.copy())
     # Normalize
-    user_normalized = df.apply(lambda x: normalize_user(x, user_test_means,user_test_std), axis=1)
+    user_normalized = df.apply(lambda x: normalize_user(x, user_means,user_std), axis=1)
     user_normalized = user_normalized.drop(columns=[ 'Date'], errors='ignore')
     return user_normalized
 
-def runitall(email: str, password: str, zone3: int , zone5: int ):
+def runitall(email: str, password: str, zone3: int , zone5: int ) -> BytesIO:
     """ 
     run all functions to get the image
             email: str : user email for api call
             password: str : user password for api call
         return: buffer_img : image buffer with the plot
     """
+    # Sanity Check
+    if zone5 <= zone3:
+        raise ValueError("Zone 5 is by definition a higher hr than zone 3, try again,"
+        " and if you aren't sure of your own heart rate zones,try z3 = 150 and z5 = 180 as an estimate")
+    
     # import model
     try: 
 
         with open('mvp2best_logistic_model.pkl', 'rb') as file:
             model = pickle.load(file)
     except FileNotFoundError:
-        logger.error("Model file not found. Please ensure 'mvp2best_logistic_model.pkl' is in the 'models' directory.")
+        logger.error("Model file not found. Please ensure 'mvp2best_logistic_model.pkl' is in the project directory.")
         raise
     except Exception as e:
         logger.error(f"An error occurred while loading the model: {e}")
@@ -79,17 +87,18 @@ def runitall(email: str, password: str, zone3: int , zone5: int ):
 
     #pipeline steps
     try:    
-        start_date, end_date, df_memory = main_api_call(email, password)
+        start_date, end_date, runs, other = main_api_call(email, password)
     except Exception as e:
-        logger.error(f"An error occurred during the API call: {e}")
+        logger.error(f"An error occurred during the API call: make sure email and password are correct, and try again")
         raise
     logger.info("API call completed successfully.")
     try: 
-        df = main_extract_transform(start_date, end_date, df_memory, zone3, zone5)
+        df = main_extract_transform(start_date, end_date, runs, other, zone3, zone5)
     except Exception as e:
         logger.error(f"An error occurred during data extraction and transformation: {e}")
         raise
     logger.info("Data extraction and transformation completed successfully.")
+
     # add the normalisation step
     try:
         norm_df= norm_user_data(df)
@@ -97,6 +106,7 @@ def runitall(email: str, password: str, zone3: int , zone5: int ):
         logger.error(f"An error occurred during data normalization: {e}")
         raise
     logger.info("Data normalization completed successfully.")
+
     # make predictions
     try:
         df['injury probabilities'] = model.predict_proba(norm_df)[:, 1]
@@ -123,7 +133,7 @@ def runitall(email: str, password: str, zone3: int , zone5: int ):
     buffer_img = io.BytesIO()
     plt.savefig(buffer_img, format="png")
     buffer_img.seek(0)
-    plt.close()  # free memory
+    plt.close()
 
     return buffer_img
 
@@ -239,45 +249,7 @@ async def predict_and_visualize(email: str = Form(...), password: str = Form(...
         </html>
         """
         return HTMLResponse(content=html_content)
-
-    except Exception as e:
-        logger.error(f"Prediction failed: {e}")
-        return HTMLResponse(content=f"<p>Error: {e}</p>", status_code=500)
-        
-
     
     except Exception as e:
         logger.error(f"An error occurred in the prediction and visualization endpoint: {e}")
         return {"something didn't go quite right with this. Try again to be sure but if no joy send me a quick email at milomoran123@gmail.com and I'll try to figure out what happened": str(e)}, 500
-'''
-<p style="max-width:600px; font-size:14px; color:#333;">
-                
-                The model does this by taking into account both your recent acute training history in 
-                the most recent week as well as your 'form' for the past three weeks. <br/><br/>
-
-                The model looks at not only your total training volume but also the intensity 
-                of that training, with heart rate zones as a proxy for intensity.<br/><br/>
-
-                The model is trained on a large dataset of running training logs and injury records, 
-                and is able to identify patterns that are associated with increased injury risk. <br/><br/>
-
-                The output is a risk score between 0 and 1, with higher scores indicating a higher risk. <br/><br/>
-                
-                Calibrating the model is particularly difficult, as I can't exactly tell a load of 
-                people to go out and train harder until they get injured. <br/><br/>
-
-                From what I can tell of looking at outputs from my people who have tested the tool, a score below 0.6 
-                seems to be a low risk of injury, and scores above .7 would warrant a bit of extra caution.
-                What I would like for users to do is take a look at the trends: Is your risk score
-                increasing for the past few days, is it largely stable, or just fluctuating a little? 
-                Either steady or rapid increases are probably cause for concern <br/><br/>
-
-                The model can be used as a guide to help you make informed decisions about your training.
-
-                <br/><br/>Please note that this tool is not a substitute for professional medical advice.
-                <br/><br/>               
-
-            
-                
-            </p>
-'''
