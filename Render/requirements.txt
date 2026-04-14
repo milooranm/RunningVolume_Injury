@@ -17,8 +17,8 @@ executing==2.2.0
 flake8==7.3.0
 fonttools==4.59.0
 future==1.0.0
-garminconnect==0.2.28
-garth==0.5.17
+garminconnect==0.3.2
+garth==0.8
 ghp-import==2.1.0
 hyperopt==0.2.7
 idna==3.10

@@ -50,12 +50,8 @@ def getMeanStd_user(data: pd.DataFrame) -> Tuple[pd.Series, pd.Series]:
     return mean, std
 
 def norm_user_data(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    normalize the user data
-    """
     # Get the mean + std dev
     user_means, user_std = getMeanStd_user(df.copy())
-    # Normalize
     user_normalized = df.apply(lambda x: normalize_user(x, user_means,user_std), axis=1)
     user_normalized = user_normalized.drop(columns=[ 'Date'], errors='ignore')
     return user_normalized
@@ -74,7 +70,6 @@ def runitall(email: str, password: str, zone3: int , zone5: int ) -> BytesIO:
     
     # import model
     try: 
-
         with open('mvp2best_logistic_model.pkl', 'rb') as file:
             model = pickle.load(file)
     except FileNotFoundError:

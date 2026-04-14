@@ -3,15 +3,15 @@ import logging
 import os
 import csv
 import sys
-from getpass import getpass
 import requests
-from io import BytesIO
 import pandas as pd
 import re
+
+from getpass import getpass
+from io import BytesIO
 from dotenv import load_dotenv
-
-
 from typing import List, Dict, Optional, Tuple
+
 from garminconnect import (
     Garmin,
     GarminConnectAuthenticationError,
@@ -22,9 +22,8 @@ from garminconnect import (
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
 load_dotenv()
-
-
 
 def init_api(email: str, password: str) -> Optional[Garmin]:
     """Initialize Garmin API with your credentials."""
@@ -38,43 +37,6 @@ def init_api(email: str, password: str) -> Optional[Garmin]:
 
     return garmin
 
-
-# Deprecated function prior to in-memory handling!!!
-'''
-def get_activity_files(api, start_date, end_date, output_dir="./"):
-    """Downloads activity files within a date range."""
-    
-    try:
-        activities = api.get_activities_by_date(
-            start_date.isoformat(), end_date.isoformat()
-        )
-
-        for activity in activities:
-            activity_start_time = datetime.datetime.strptime(
-                activity["startTimeLocal"], "%Y-%m-%d %H:%M:%S"
-            ).strftime("%d-%m-%Y")
-            activity_id = activity["activityId"]
-            activity_name = activity["activityName"]
-
-            csv_data = api.download_activity(
-                activity_id, dl_fmt=api.ActivityDownloadFormat.CSV
-            )
-            output_file = os.path.join(output_dir, f"{str(activity_name)}_{str(activity_start_time)}_{str(activity_id)}.csv")
-            with open(output_file, "wb") as fb:
-                fb.write(csv_data)
-            print(f"Activity data downloaded to file {output_file}")
-
-    except (
-        GarminConnectConnectionError,
-        GarminConnectAuthenticationError,
-        GarminConnectTooManyRequestsError,
-        requests.exceptions.HTTPError,
-    ) as err:
-        logger.error(err)
-        print("Error downloading activities.")
-'''
-
-# create a map for what cols I want and apply it to everything going through?
 def get_activities(api: Garmin, start_date: datetime.date, end_date: datetime.date, Z3_min: int = 135, Z5_min: int  = 172) -> Tuple[List[Dict], List[Dict]]: 
     """
     Retrieves activity data within a date range and returns two lists of per-day dicts:
@@ -127,7 +89,6 @@ def get_activities(api: Garmin, start_date: datetime.date, end_date: datetime.da
                 if activity_start_date not in other_by_date:
                     other_by_date[activity_start_date] = {'hours_alternative': 0.0,}
                 other_by_date[activity_start_date]['hours_alternative'] += hours_alternative                
-
     except (
         GarminConnectConnectionError,
         GarminConnectAuthenticationError,
@@ -135,7 +96,6 @@ def get_activities(api: Garmin, start_date: datetime.date, end_date: datetime.da
         requests.exceptions.HTTPError,
     ) as err:
         logger.error(f'error in get_activity_dataframes :{err}')
-        print(f"Error downloading activities: {err}")
         return [], []
 
     # Convert aggregated maps to lists of single dicts per date
@@ -168,12 +128,7 @@ def main_api_call(email: str =None, password: str = None, Z3_min: int  = 135, Z5
     return start_date, end_date, runs, alt
 
 if __name__ == "__main__":
-
-
-        
     email = os.getenv('EMAIL')
     password = os.getenv('PASSWORD')
-
-
     start_date ,end_date, runs, alt = main_api_call(email, password)
     print(runs)

@@ -5,7 +5,6 @@ import logging
 
 from datetime import datetime, timedelta, date
 from pathlib import Path
-
 from io import BytesIO
 from typing import Dict, List, Optional, Tuple
 
@@ -36,7 +35,7 @@ def populatebydate_memory(emptydf: pd.DataFrame, run_daily: List[Dict], other_da
     """
     Populates the empty DataFrame with summed data per date from running and other activities.
     """
-    # Build quick lookup maps keyed by day string (DD-MM-YYYY)
+    # Build lookup maps keyed by date
     run_map: Dict[str, Dict] = {}
     for entry in run_daily:
         day = entry['date']
@@ -228,7 +227,11 @@ def calculate_ratios_and_acwr(newdf,combodf,weekly_df):
     combodf['5day/3W hours alternative training ratio'] = np.where( week3hoursalt != 0, (day5hoursalt / week3hoursalt).round(3),0)
     
     # ACWR
-    # explain my arbitrary formula here
+    # explain my arbitrary formula here,  
+    # the ratio of (vol + vol at intensity), 
+    # for 4x the acute load (5 day),
+    # over  the chronic load (3 week),
+    # 1 meaning no increase in accute load over chronic load
     combodf['ACWR'] = np.where(
         (week3totkm + (week3propz3plus * week3totkm)) != 0,
         ((day5totkm + (day5propz3plus* day5totkm))*4)/ 
@@ -242,7 +245,6 @@ def refactor(df):
     weekly_df = create_weekly_df(df)
     merge_df = pd.merge(combodf, weekly_df, on='Date', how='inner')
     newdf = df[df['Date'].isin(weekly_df['Date'])]
-
     combodf = calculate_ratios_and_acwr(newdf, merge_df, weekly_df)
     
     return combodf
@@ -251,4 +253,5 @@ def main_extract_transform(start_date, end_date, runs, other, Z3_min = 135, Z5_m
     df = initial_transform(start_date, end_date, runs, other, Z3_min, Z5_min)
     refactored_df = refactor(df)
     print(refactored_df)
+    
     return refactored_df
