@@ -46,7 +46,7 @@ def getMeanStd_user(data: pd.DataFrame) -> Tuple[pd.Series, pd.Series]:
     data_no_date = data.drop(columns =['Date'], errors = 'ignore')
     mean = data_no_date.mean()
     std = data_no_date.std()
-    std.replace(0.0, 0.01)
+    std = std.replace(0.0, 0.01)
     return mean, std
 
 def norm_user_data(df: pd.DataFrame) -> pd.DataFrame:
