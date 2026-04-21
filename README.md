@@ -27,6 +27,13 @@ To make these predicitions available for users, I have created a pipeline so tha
 
 A video of me giving a demo of an earlier version of the project and discussing some of the results can be found here: https://www.loom.com/share/a783d406943e4f20a68f1a5d8d3b8eca?sid=c80f4b59-c03a-420e-bf74-750eee413210
 
+## Example Visualisation
+The following image shows that the data shows a clear spike in risk correlating directly with the time of my actual injury on the first week of september 2024, demonstrating that the model was able to account for my injury risk better than the 10% weekly mileage increase rule that I had been adhering to, validating that my model would have helped me to avoid injury.
+
+<img src="./references/rolling_mean_plot.png" width="700">
+
+
+
 ## Installation
 
 If you wish to run this project locally, you can install it as a package directly from GitHub using `pip`:
@@ -46,14 +53,11 @@ Python API wrapper for Garmin Connect adapted from https://github.com/cyberjunky
 
 ```
 ├── LICENSE                              <- Open-source license
-├── Makefile                             <- Convenience commands like `make data` or `make train`
 ├── README.md                            <- Top-level README for developers
 ├── pyproject.toml                       <- Project config and package metadata for Runningprojectmodule
 ├── poetry.lock                          <- Locked dependency versions
 ├── requirements.txt                     <- Requirements file for reproducing the analysis environment
 ├── setup.cfg                            <- Configuration file for flake8
-├── rolling_mean_plot.png                <- Example output plot
-├── user activity_data_with_predictions.csv <- Sample data with model predictions
 │
 ├── Runningprojectmodule/                <- Main source package
 │   ├── __init__.py                      <- Makes Runningprojectmodule a Python package
@@ -64,10 +68,6 @@ Python API wrapper for Garmin Connect adapted from https://github.com/cyberjunky
 │   ├── features.py                      <- Code to create features for modeling
 │   ├── plots.py                         <- Code to create visualizations
 │   ├── project_instance.py              <- End-to-end pipeline entry point
-│   └── modeling/
-│       ├── __init__.py
-│       ├── predict.py                   <- Code to run model inference with trained models
-│       └── train.py                     <- Code to train models
 │
 ├── models/                              <- Trained and serialized models
 │   ├── logistic_model.pkl
@@ -97,8 +97,6 @@ Python API wrapper for Garmin Connect adapted from https://github.com/cyberjunky
 │   ├── fastapi.ipynb
 │   ├── mvp2LogRegTest.ipynb
 │   ├── requirements.txt
-│   ├── rolling_mean_plot.png
-│   ├── injury.png
 │   └── trial_fastapi.py
 │
 ├── Render/                              <- Files for Render deployment
@@ -114,17 +112,9 @@ Python API wrapper for Garmin Connect adapted from https://github.com/cyberjunky
 │   ├── GarminAPIpull.py
 │   ├── injured_running.jpg
 │   ├── reference_code_Lovdal.ipynb
+|   ├── rolling_mean_plot.png
+|   ├── user activity_data_with_predictions.csv 
 │   └── workflow.svg
-│
-├── reports/                             <- Generated analysis reports
-│   └── figures/                         <- Generated graphics and figures
-│
-├── docs/                                <- MkDocs project; see www.mkdocs.org for details
-│   ├── README.md
-│   ├── mkdocs.yml
-│   └── docs/
-│       ├── index.md
-│       └── getting-started.md
 │
 └── tests/                               <- Unit tests
     ├── test_apicall_input.py
