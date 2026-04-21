@@ -45,52 +45,90 @@ Python API wrapper for Garmin Connect adapted from https://github.com/cyberjunky
 ## Project Organization
 
 ```
-├── LICENSE            <- Open-source license if one is chosen
-├── Makefile           <- Makefile with convenience commands like `make data` or `make train`
-├── README.md          <- The top-level README for developers using this project.
-├── data
-│   ├── external       <- Data from third party sources.
-│   ├── interim        <- Intermediate data that has been transformed.
-│   ├── processed      <- The final, canonical data sets for modeling.
-│   └── raw            <- The original, immutable data dump.
+├── LICENSE                              <- Open-source license
+├── Makefile                             <- Convenience commands like `make data` or `make train`
+├── README.md                            <- Top-level README for developers
+├── pyproject.toml                       <- Project config and package metadata for Runningprojectmodule
+├── poetry.lock                          <- Locked dependency versions
+├── requirements.txt                     <- Requirements file for reproducing the analysis environment
+├── setup.cfg                            <- Configuration file for flake8
+├── rolling_mean_plot.png                <- Example output plot
+├── user activity_data_with_predictions.csv <- Sample data with model predictions
 │
-├── docs               <- A default mkdocs project; see www.mkdocs.org for details
+├── Runningprojectmodule/                <- Main source package
+│   ├── __init__.py                      <- Makes Runningprojectmodule a Python package
+│   ├── APIcall_v2.py                    <- Garmin Connect API wrapper
+│   ├── config.py                        <- Stores useful variables and configuration
+│   ├── data_extraction.py               <- Scripts to extract and load data from the API
+│   ├── dataset.py                       <- Scripts to download or generate datasets
+│   ├── features.py                      <- Code to create features for modeling
+│   ├── plots.py                         <- Code to create visualizations
+│   ├── project_instance.py              <- End-to-end pipeline entry point
+│   └── modeling/
+│       ├── __init__.py
+│       ├── predict.py                   <- Code to run model inference with trained models
+│       └── train.py                     <- Code to train models
 │
-├── models             <- Trained and serialized models, model predictions, or model summaries
+├── models/                              <- Trained and serialized models
+│   ├── logistic_model.pkl
+│   ├── mvp1_logistic_model.pkl
+│   ├── mvp2best_logistic_model.pkl
+│   └── xgboost_untuned.py
 │
-├── notebooks          <- Jupyter notebooks. Naming convention is a number (for ordering),
-│                         the creator's initials, and a short `-` delimited description, e.g.
-│                         `1.0-jqp-initial-data-exploration`.
+├── notebooks/                           <- Jupyter notebooks for exploration and training
+│   ├── Early look at data.ipynb
+│   ├── Generate_training_review.ipynb
+│   ├── Tuned_LogReg_model.ipynb
+│   ├── api_data_extraction.ipynb
+│   └── experimentation/
+│       ├── logR.ipynb
+│       ├── multi_cell_train_XGBC.ipynb
+│       └── tune_XGBC.ipynb
 │
-├── pyproject.toml     <- Project configuration file with package metadata for 
-│                         Runningprojectmodule and configuration for tools like black
+├── MVP2 notebooks/                      <- Notebooks and scripts for MVP2 iteration
+│   ├── APIcall_v3.py
+│   ├── MVP2 EDA.ipynb
+│   ├── MVP2_data_extraction_test.ipynb
+│   ├── MVP2log_reg.ipynb
+│   ├── Neural_network _implementation.ipynb
+│   ├── apicall_input.py
+│   ├── data_extraction_v2.py
+│   ├── fast_inst.py
+│   ├── fastapi.ipynb
+│   ├── mvp2LogRegTest.ipynb
+│   ├── requirements.txt
+│   ├── rolling_mean_plot.png
+│   ├── injury.png
+│   └── trial_fastapi.py
 │
-├── references         <- Data dictionaries, manuals, and all other explanatory materials.
+├── Render/                              <- Files for Render deployment
+│   ├── apicall_input.py
+│   ├── data_extraction_v2.py
+│   ├── fast_inst.py
+│   ├── mvp2best_logistic_model.pkl
+│   └── requirements.txt
 │
-├── reports            <- Generated analysis as HTML, PDF, LaTeX, etc.
-│   └── figures        <- Generated graphics and figures to be used in reporting
+├── references/                          <- Reference code, data dictionaries, and explanatory materials
+│   ├── APIcall.py
+│   ├── APIcall_v2.py
+│   ├── GarminAPIpull.py
+│   ├── injured_running.jpg
+│   ├── reference_code_Lovdal.ipynb
+│   └── workflow.svg
 │
-├── requirements.txt   <- The requirements file for reproducing the analysis environment, e.g.
-│                         generated with `pip freeze > requirements.txt`
+├── reports/                             <- Generated analysis reports
+│   └── figures/                         <- Generated graphics and figures
 │
-├── setup.cfg          <- Configuration file for flake8
+├── docs/                                <- MkDocs project; see www.mkdocs.org for details
+│   ├── README.md
+│   ├── mkdocs.yml
+│   └── docs/
+│       ├── index.md
+│       └── getting-started.md
 │
-└── Runningprojectmodule   <- Source code for use in this project.
-    │
-    ├── __init__.py             <- Makes Runningprojectmodule a Python module
-    │
-    ├── config.py               <- Store useful variables and configuration
-    │
-    ├── dataset.py              <- Scripts to download or generate data
-    │
-    ├── features.py             <- Code to create features for modeling
-    │
-    ├── modeling                
-    │   ├── __init__.py 
-    │   ├── predict.py          <- Code to run model inference with trained models          
-    │   └── train.py            <- Code to train models
-    │
-    └── plots.py                <- Code to create visualizations
+└── tests/                               <- Unit tests
+    ├── test_apicall_input.py
+    └── test_data_extraction.py
 ```
 
 --------
