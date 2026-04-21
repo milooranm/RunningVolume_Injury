@@ -25,7 +25,7 @@ To make these predicitions available for users, I have created a pipeline so tha
 
 ## Project Demonstration
 
-A video of me giving a demo of the project  and discussing some of the results can be found here: https://www.loom.com/share/a783d406943e4f20a68f1a5d8d3b8eca?sid=c80f4b59-c03a-420e-bf74-750eee413210
+A video of me giving a demo of an earlier version of the project and discussing some of the results can be found here: https://www.loom.com/share/a783d406943e4f20a68f1a5d8d3b8eca?sid=c80f4b59-c03a-420e-bf74-750eee413210
 
 ## Installation
 
